@@ -1,0 +1,7 @@
+PyQt6
+pandas
+openpyxl
+xlrd
+python-docx
+PyPDF2==3.0.1
+python-pptx==1.0.2
