@@ -34,6 +34,7 @@ dist/
 # Logs and temporary files
 *.log
 *.tmp
+/GAP_ANALYSIS.md
 
 # Operating-system and editor metadata
 .DS_Store

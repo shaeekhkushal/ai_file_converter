@@ -1,7 +1,7 @@
-PyQt6
-pandas
-openpyxl
-xlrd
-python-docx
+PyQt6==6.8.1
+pandas==2.3.3
+openpyxl==3.1.5
+xlrd==2.0.2
+python-docx==1.2.0
 PyPDF2==3.0.1
 python-pptx==1.0.2

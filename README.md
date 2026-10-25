@@ -1,18 +1,15 @@
 # File Converter
 
-A desktop application for previewing and converting Excel, CSV, text, Markdown,
-and Word documents to JSON. The application uses PyQt6 and works with native
-desktop file dialogs; it does not require a web service or network connection.
+A cross-platform PyQt6 desktop application and command-line tool for converting
+documents and tabular files to JSON. Conversion is handled by a reusable
+service that can be called from the desktop UI or other Python code.
 
-## Requirements
+## Requirements and installation
 
 - Python 3.10 or newer
-- A supported desktop environment for PyQt6 (Windows, macOS, or Linux)
+- Windows, macOS, or Linux for the graphical application
 
-## Install
-
-Create and activate a virtual environment, then install the application
-dependencies:
+Create a virtual environment and install the pinned dependencies.
 
 **Windows (PowerShell)**
 
@@ -32,57 +29,107 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-## Launch
+## Usage
 
-From the repository root, run:
+Launch the desktop application:
 
 ```sh
 python main.py
 ```
 
-Choose a file, review the preview, select **Convert to JSON**, and choose where
-to save the output. By default, the suggested output is named
-`<input-filename>.json` beside the source file.
+Choose an input file, review the preview, set an optional record limit, select
+**Convert to JSON**, and choose an output location. The default filename replaces
+the source extension (`report.csv` becomes `report.json`). The save dialog lets
+you choose a different output folder.
 
-`gui_pyqt.py` contains the PyQt window and is not a separate launch command.
-`gui_tkinter.py` is a deprecated compatibility command that starts the same
-PyQt application; use `python main.py` for new launch scripts and shortcuts.
+The same entry point supports headless command-line conversion. When no output
+name is provided, the input basename with a `.json` extension is used:
+
+```sh
+python main.py report.csv
+python main.py report.xlsx --output-dir ./converted --output-name quarterly.json
+python main.py report.pdf --max-records 20
+```
+
+`--output-dir` chooses the destination directory. `--output-name` accepts a
+filename only, not a path; directory components such as `../` are rejected.
+When no output directory is provided, JSON is saved beside the input file.
+`--max-records` is optional and caps rows, paragraphs, pages, or slides in each
+relevant section. By default, all records are converted.
+
+The conversion service can also be used from Python:
+
+```python
+from services.conversion import convert_file
+
+output_path = convert_file(
+    "report.csv",
+    output_directory="./converted",
+    output_name="report.json",
+    max_records=1000,
+)
+```
 
 ## Supported formats
 
-- `.xlsx`: Excel workbooks, including the existing merged-cell handling
-- `.xls`: legacy Excel workbooks, read through `xlrd`
-- `.csv`: CSV files
-- `.txt`, `.log`, `.md`: UTF-8 text files
-- `.docx`: Word documents
-- `.pdf`: PDF documents (text extracted per page)
-- `.ppt`, `.pptx`: PowerPoint presentations (text extracted per slide)
+| Input | Required format-specific packages | JSON representation |
+|---|---|---|
+| `.csv` | None | Non-empty rows as objects keyed by the header row |
+| `.txt`, `.log`, `.md` | None | Non-empty lines as `{"line": ...}` records |
+| `.xlsx` | `openpyxl`, `pandas` | A mapping of worksheet names to row objects |
+| `.xls` | `xlrd`, `pandas` | A mapping of worksheet names to row objects |
+| `.docx` | `python-docx` | Non-empty paragraphs as `{"paragraph": ...}` records |
+| `.pdf` | `PyPDF2` | Extractable page text as page records |
+| `.ppt`, `.pptx` | `python-pptx` | Non-empty slide text as slide records |
 
-Excel files are converted sheet by sheet. CSV rows and non-empty text lines are
-represented as JSON records; Word paragraph text is also preserved as records.
-The preview is intentionally limited to a small sample and does not alter the
-conversion output.
+Format-specific packages are imported only for the format being processed. If a
+required package is missing, conversion reports its name and installation
+command. Install the complete supported dependency set with
+`python -m pip install -r requirements.txt`.
+
+## Output safety and conversion limits
+
+- The output directory must already exist and is selected explicitly by the
+  user or caller. The output filename is restricted to one filename component,
+  normalized to `.json`, and cannot overwrite the input file.
+- JSON is written to a temporary file in the selected destination directory and
+  replaces the destination only after serialization succeeds.
+- `--max-records` limits extracted records per worksheet or document section.
+  For `.xlsx`, a limit enables read-only row iteration to reduce workbook
+  conversion memory use. With no limit, the existing full-workbook behavior is
+  retained, including merged-cell handling.
+- The cap limits extracted output records; it is not a hard memory or file-size
+  limit. PDF and PowerPoint libraries may load document structures while
+  parsing, and the generated JSON records are still held before serialization.
+- PDF conversion extracts selectable text only. It does not OCR scanned pages.
+- The preview is a small sample; it does not determine the full conversion
+  output.
 
 ## Project layout
 
 ```text
-main.py                 Canonical application launcher
-gui_pyqt.py             PyQt desktop interface
-gui_tkinter.py          Deprecated launcher compatibility shim
-utils/
-  csv_utils.py          CSV data processing
-  docx_utils.py         Word document processing
-  excel_utils.py        Excel data processing
-  file_selector.py      Native Qt file-selection helper
-  json_writer.py        Conversion dispatch and JSON output
-  text_utils.py         Text data processing
-requirements.txt        Direct runtime dependencies
+main.py                    GUI launcher and CLI
+gui_pyqt.py                PyQt desktop UI
+services/conversion.py     Shared conversion service
+utils/                     Format processors and dependency helpers
+requirements.txt           Pinned direct runtime dependencies
 ```
 
-Conversion writes to a temporary file in the destination directory and replaces
-the destination only after JSON serialization succeeds. The source path cannot
-be used as the output path.
+`utils/json_writer.py` retains a compatibility wrapper for existing callers
+that save beside the input file. New integrations that need a custom destination
+should use `services.conversion.convert_file` and pass the output directory and
+filename separately.
 
-## Tests
+## Development and contributions
+
+1. Create and activate a virtual environment, then install `requirements.txt`.
+2. Keep format processing in `utils/` and reusable orchestration in
+   `services/conversion.py`; avoid adding conversion behavior to the UI.
+3. Preserve the desktop and CLI workflows when changing shared conversion
+   behavior. Add focused tests for new processors and safety rules when tests
+   are introduced.
+4. Before submitting a change, review the diff and run the relevant project
+   checks. Do not commit virtual environments, caches, local secrets, or
+   generated conversion output.
 
 There is currently no automated test suite in this repository.

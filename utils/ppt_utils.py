@@ -1,6 +1,6 @@
 from pptx import Presentation
 
-def process_ppt(file_path):
+def process_ppt(file_path, max_records=None):
     """Extract text from each slide of a PowerPoint file.
 
     Returns a list of dictionaries with ``slide`` (1‑based index) and ``text``
@@ -9,6 +9,8 @@ def process_ppt(file_path):
     prs = Presentation(file_path)
     data = []
     for i, slide in enumerate(prs.slides, start=1):
+        if max_records is not None and i > max_records:
+            break
         texts = []
         for shape in slide.shapes:
             if hasattr(shape, "text") and shape.text:
