@@ -239,6 +239,23 @@ class FileConverterApp(QWidget):
                 border: none;
                 selection-background-color: {colors["selection"]};
             }}
+            QSpinBox#maxRecords {{
+                color: {colors["field_foreground"]};
+                background: {colors["field"]};
+                border: 1px solid {colors["border"]};
+                border-radius: 7px;
+                padding: 2px 4px;
+            }}
+            QSpinBox#maxRecords::up-button, QSpinBox#maxRecords::down-button {{
+                width: 16px;
+                background: {colors["card"]};
+                border: none;
+            }}
+            QSpinBox#maxRecords::up-arrow, QSpinBox#maxRecords::down-arrow {{
+                width: 8px;
+                height: 8px;
+                color: {colors["button_foreground"]};
+            }}
             QPushButton {{
                 border: 1px solid {colors["button_border"]};
                 border-radius: 7px;

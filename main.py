@@ -42,6 +42,18 @@ def _create_parser() -> argparse.ArgumentParser:
 
 
 def _run_gui() -> int:
+    """Run the PyQt GUI without relying on GNOME's GTK theme integration."""
+    import os
+    if sys.platform.startswith("linux"):
+        os.environ.setdefault("QT_QPA_PLATFORMTHEME", "generic")
+
+    if (
+        not os.getenv("DISPLAY")
+        and not os.getenv("WAYLAND_DISPLAY")
+        and not os.getenv("QT_QPA_PLATFORM")
+    ):
+        os.environ["QT_QPA_PLATFORM"] = "offscreen"
+
     from PyQt6.QtWidgets import QApplication
 
     from gui_pyqt import FileConverterApp
