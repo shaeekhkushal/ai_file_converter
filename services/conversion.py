@@ -1,10 +1,15 @@
 import json
+import logging
 import os
 import tempfile
+import time
 from importlib import import_module
 from pathlib import Path
 
 from utils.dependencies import MissingDependencyError, load_optional_dependency
+
+
+logger = logging.getLogger("ai_file_converter.conversion")
 
 
 PROCESSORS = {
@@ -50,7 +55,7 @@ def _resolve_output_path(output_directory: str | Path, output_name: str) -> Path
     return output_path
 
 
-def convert_file(
+def _convert_file(
     input_file: str | Path,
     output_directory: str | Path | None = None,
     output_name: str | None = None,
@@ -111,3 +116,43 @@ def convert_file(
             temporary_path.unlink(missing_ok=True)
 
     return output_path
+
+
+def convert_file(
+    input_file: str | Path,
+    output_directory: str | Path | None = None,
+    output_name: str | None = None,
+    max_records: int | None = None,
+) -> Path:
+    """Convert a file and log duration and file-size metrics."""
+    started_at = time.perf_counter()
+    source_path = Path(input_file).expanduser()
+    input_format = source_path.suffix.lower() or "(none)"
+
+    try:
+        input_size_bytes = source_path.stat().st_size
+        output_path = _convert_file(
+            input_file,
+            output_directory=output_directory,
+            output_name=output_name,
+            max_records=max_records,
+        )
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        logger.info(
+            "conversion_completed format=%s input_size_bytes=%d "
+            "output_size_bytes=%d duration_ms=%.2f max_records=%s",
+            input_format,
+            input_size_bytes,
+            output_path.stat().st_size,
+            elapsed_ms,
+            max_records if max_records is not None else "unlimited",
+        )
+        return output_path
+    except Exception:
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        logger.exception(
+            "conversion_failed format=%s duration_ms=%.2f",
+            input_format,
+            elapsed_ms,
+        )
+        raise

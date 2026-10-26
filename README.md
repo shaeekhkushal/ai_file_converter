@@ -120,16 +120,31 @@ that save beside the input file. New integrations that need a custom destination
 should use `services.conversion.convert_file` and pass the output directory and
 filename separately.
 
+## Logging
+
+The application writes a rotating local log with conversion success/failure,
+input and output sizes, selected format, record limit, and elapsed time.
+Successful conversion metrics do not include source or destination paths, and
+the application does not send telemetry to a remote service. Error tracebacks
+can include diagnostic details from the underlying file libraries. Logs are
+stored in the platform's user data location:
+
+- Windows: `%LOCALAPPDATA%\AIFileConverter\Logs`
+- macOS: `~/Library/Logs/AIFileConverter`
+- Linux: `$XDG_STATE_HOME/ai-file-converter/logs`, or
+  `~/.local/state/ai-file-converter/logs` when `XDG_STATE_HOME` is unset
+
+The active log is `application.log`; up to three rotated files are retained.
+
 ## Development and contributions
 
-1. Create and activate a virtual environment, then install `requirements.txt`.
+1. Create and activate a virtual environment, then install development
+   dependencies with `python -m pip install -r requirements-dev.txt`.
 2. Keep format processing in `utils/` and reusable orchestration in
    `services/conversion.py`; avoid adding conversion behavior to the UI.
 3. Preserve the desktop and CLI workflows when changing shared conversion
-   behavior. Add focused tests for new processors and safety rules when tests
-   are introduced.
-4. Before submitting a change, review the diff and run the relevant project
-   checks. Do not commit virtual environments, caches, local secrets, or
-   generated conversion output.
-
-There is currently no automated test suite in this repository.
+   behavior, and add focused tests for new processors and safety rules.
+4. Run the checks with `python -m pytest`. GitHub Actions runs the suite on
+   pushes and pull requests using Python 3.10 and 3.12.
+5. Before submitting a change, review the diff. Do not commit virtual
+   environments, caches, local secrets, or generated conversion output.

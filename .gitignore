@@ -30,6 +30,8 @@ dist/
 .env
 .env.*
 !.env.example
+/tests
+/requirements-dev.txt
 
 # Logs and temporary files
 *.log

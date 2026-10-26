@@ -492,7 +492,6 @@ class FileConverterApp(QWidget):
                 max_records,
             )
         except Exception as error:
-            logger.exception("Unable to convert selected file")
             self.status_label.setText("Conversion failed.")
             self._show_message(
                 "Conversion failed",

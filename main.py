@@ -2,6 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from app_logging import configure_logging
 from services.conversion import convert_file
 
 
@@ -44,6 +45,8 @@ def _create_parser() -> argparse.ArgumentParser:
 def _run_gui() -> int:
     """Run the PyQt GUI without relying on GNOME's GTK theme integration."""
     import os
+
+    configure_logging()
     if sys.platform.startswith("linux"):
         os.environ.setdefault("QT_QPA_PLATFORMTHEME", "generic")
 
@@ -74,6 +77,7 @@ def main() -> int:
             parser.error("CLI options require an input file.")
         return _run_gui()
 
+    configure_logging()
     try:
         result = convert_file(
             args.input_file,
